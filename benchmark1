@@ -1,0 +1,19 @@
+go test -bench=Read -benchtime=60s -timeout=30m -count=3
+goos: linux
+goarch: amd64
+pkg: github.com/wenzhang-dev/bitcaskDB-benchmark
+cpu: Intel(R) Xeon(R) Gold 5318N CPU @ 2.10GHz
+BenchmarkReadWithBitcaskDB/read4K-8  11459024    6313 ns/op   1.217 AvgRSS(GB)   1.275 PeakRSS(GB)   10120 B/op   10 allocs/op
+BenchmarkReadWithBitcaskDB/read4K-8  12512324    6522 ns/op   1.220 AvgRSS(GB)   1.234 PeakRSS(GB)   10120 B/op   10 allocs/op
+BenchmarkReadWithBitcaskDB/read4K-8  12414660    6468 ns/op   1.206 AvgRSS(GB)   1.231 PeakRSS(GB)   10120 B/op   10 allocs/op
+BenchmarkReadWithBadger/read4K-8      4575487   13526 ns/op   2.716 AvgRSS(GB)   4.350 PeakRSS(GB)   19416 B/op   43 allocs/op
+BenchmarkReadWithBadger/read4K-8      4960239   13741 ns/op   1.629 AvgRSS(GB)   1.681 PeakRSS(GB)   19406 B/op   43 allocs/op
+BenchmarkReadWithBadger/read4K-8      4851144   14429 ns/op   1.591 AvgRSS(GB)   1.650 PeakRSS(GB)   19422 B/op   44 allocs/op
+BenchmarkReadWithLevelDB/read4K-8     1569663   50710 ns/op   0.111 AvgRSS(GB)   0.134 PeakRSS(GB)   55021 B/op   35 allocs/op
+BenchmarkReadWithLevelDB/read4K-8     1000000   63066 ns/op   0.113 AvgRSS(GB)   0.129 PeakRSS(GB)   54264 B/op   35 allocs/op
+BenchmarkReadWithLevelDB/read4K-8     1236408   57268 ns/op   0.114 AvgRSS(GB)   0.138 PeakRSS(GB)   54624 B/op   35 allocs/op
+BenchmarkReadWithBoltDB/read4K-8     12587562    5269 ns/op   5.832 AvgRSS(GB)   5.838 PeakRSS(GB)     832 B/op   13 allocs/op
+BenchmarkReadWithBoltDB/read4K-8     16920481    4482 ns/op   5.832 AvgRSS(GB)   5.833 PeakRSS(GB)     832 B/op   13 allocs/op
+BenchmarkReadWithBoltDB/read4K-8     19141418    5276 ns/op   5.832 AvgRSS(GB)   5.835 PeakRSS(GB)     832 B/op   13 allocs/op
+PASS
+ok   github.com/wenzhang-dev/bitcaskDB-benchmark 1475.172s
