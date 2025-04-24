@@ -1,0 +1,11 @@
+go test -bench=DiskUsage -benchtime=60s -count=1 -timeout=30m
+goos: linux
+goarch: amd64
+pkg: github.com/wenzhang-dev/bitcaskDB-benchmark
+cpu: Intel(R) Xeon(R) Gold 5318N CPU @ 2.10GHz
+BenchmarkDiskUsageWithBitcaskDB/1_million-8 1000000000  0.003079 ns/op 3.880 DiskUsage(GB)
+BenchmarkDiskUsageWithLevelDB/1_million-8   1000000000  0.004168 ns/op 0.252 DiskUsage(GB)
+BenchmarkDiskUsageWithBadger/1_million-8    1000000000  0.02207 ns/op  2.431 DiskUsage(GB)
+BenchmarkDiskUsageWithBoltDB/1_million-8    1000000000  0.002641 ns/op 5.775 DiskUsage(GB)
+PASS
+ok   github.com/wenzhang-dev/bitcaskDB-benchmark 109.965s

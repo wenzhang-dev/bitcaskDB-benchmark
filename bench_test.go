@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -541,4 +543,134 @@ func benchmarkWriteWithBoltDB(b *testing.B, db *bolt.DB) {
 	})
 
 	reportRss(b)
+}
+
+func getActualDiskUsage(path string) int64 {
+	cmd := exec.Command("du", "-sb", path)
+
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		return 0
+	}
+
+	parts := strings.Fields(out.String())
+	if len(parts) < 1 {
+		return 0
+	}
+
+	size, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return 0
+	}
+
+	return size
+}
+
+func reportDiskUsage(b *testing.B, path string) {
+	usage := getActualDiskUsage(path)
+	b.ReportMetric(float64(usage)/1024/1024/1024, "DiskUsage(GB)")
+}
+
+func BenchmarkDiskUsageWithBitcaskDB(b *testing.B) {
+	db := getBitcaskDB(b)
+	defer db.Close()
+
+	// write 1 million
+	threshold := 1000000
+	meta := bitcask.NewMeta(nil)
+	value4KB := bitcask.GenNKBytes(4)
+	opts := &bitcask.WriteOptions{}
+
+	batchSize := 50
+	batch := bitcask.NewBatch()
+	for i := 1; i <= threshold; i++ {
+		batch.Put(nil, newKey(i, threshold), value4KB, meta)
+
+		if i%batchSize == 0 {
+			err := db.Write(batch, opts)
+			assert.Nil(b, err)
+			batch.Clear()
+		}
+	}
+
+	b.Run("1 million", func(b *testing.B) {
+		reportDiskUsage(b, "./bitcaskDB")
+	})
+}
+
+func BenchmarkDiskUsageWithLevelDB(b *testing.B) {
+	db := getLevelDB(b)
+	defer db.Close()
+
+	// write 1 million
+	threshold := 1000000
+	value4KB := bitcask.GenNKBytes(4)
+	batchSize := 50
+	batch := new(leveldb.Batch)
+	for i := 1; i <= threshold; i++ {
+		batch.Put(newKey(i, threshold), value4KB)
+
+		if i%batchSize == 0 {
+			err := db.Write(batch, nil)
+			assert.Nil(b, err)
+			batch.Reset()
+		}
+	}
+
+	b.Run("1 million", func(b *testing.B) {
+		reportDiskUsage(b, "./leveldb")
+	})
+}
+
+func BenchmarkDiskUsageWithBadger(b *testing.B) {
+	db := getBadgerDB(b)
+	defer db.Close()
+
+	// write 1 million
+	threshold := 1000000
+	value4KB := bitcask.GenNKBytes(4)
+
+	batchSize := 50
+	batch := db.NewWriteBatch()
+	for i := 1; i <= threshold; i++ {
+		err := batch.Set(newKey(i, threshold), value4KB)
+		assert.Nil(b, err)
+
+		if i%batchSize == 0 {
+			err = batch.Flush()
+			assert.Nil(b, err)
+			batch = db.NewWriteBatch()
+		}
+	}
+
+	b.Run("1 million", func(b *testing.B) {
+		reportDiskUsage(b, "./badger")
+	})
+}
+
+func BenchmarkDiskUsageWithBoltDB(b *testing.B) {
+	db := getBoltDB(b)
+	defer db.Close()
+
+	bucketName := []byte("benchmark")
+
+	// write 1 million
+	threshold := 1000000
+	value4KB := bitcask.GenNKBytes(4)
+	for i := 1; i <= threshold; i += 50 {
+		err := db.Update(func(txn *bolt.Tx) error {
+			bucket := txn.Bucket(bucketName)
+			for j := 0; j < 50; j++ {
+				err := bucket.Put(newKey(i+j, threshold), value4KB)
+				assert.Nil(b, err)
+			}
+			return nil
+		})
+		assert.Nil(b, err)
+	}
+
+	b.Run("1 million", func(b *testing.B) {
+		reportDiskUsage(b, "./bolt")
+	})
 }
